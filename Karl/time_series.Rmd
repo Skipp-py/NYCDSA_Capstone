@@ -1,0 +1,158 @@
+---
+title: "time_series"
+output: html_notebook
+---
+
+```{r}
+library(datasets)
+library(forecast)
+library(astsa)
+library(tsdl)
+```
+
+```{r}
+df = read.csv("rent_vs_time.csv")
+df$avg_rent
+rent.ts = ts(df$avg_rent)
+rent.ts.diff = diff(rent.ts)
+rent.ts.dd = diff(diff(rent.ts))
+plot.ts(rent.ts, main = "Average rent price in California", ylab = "Price, USD", xlab="Month")
+plot.ts(diff(rent.ts), main = "Differenced CA Rent Data")
+plot.ts(diff(diff(rent.ts)), main = "Double Differenced CA Rent Data")
+acf(rent.ts.diff, main = "ACF Differenced CA Rent")
+acf(rent.ts.diff, type = 'partial', main = "PACF Differenced CA Rent")
+acf(rent.ts.dd, main = "ACF Double Differenced CA Rent")
+acf(rent.ts.dd, type = 'partial', main = "PACF Double Differenced CA Rent")
+```
+Cool. So we will go with d=1, q = 2 to 4, p = 2, s=12 (for seasonality)
+
+```{r CA Rent ARIMA 1}
+d=1
+for(p in 1:4){
+  for(q in 1:4){
+    if(1){#(p+d+q<=6){
+      model<-arima(x=rent.ts, order = c((p-1),d,(q-1)))
+      pval<-Box.test(model$residuals, lag=log(length(model$residuals)))
+      sse<-sum(model$residuals^2)
+      cat(p-1,d,q-1, 'AIC=', model$aic, ' SSE=',sse,' p-VALUE=', pval$p.value,'\n')
+      # For this, we want p-value close to 1 since we are performing box test on transformed values
+    }
+  }
+}
+
+ca.arima = arima(rent.ts, order = c(3,1,2))
+
+ca.predict = forecast(ca.arima, h=24, level=80)
+#?forecast
+autoplot(ca.predict, main = "ARIMA(3,1,2) Prediction on CA Rent", ylab="Rent")
+```
+```{r}
+d = 1
+DD = 1
+per = 12
+for(p in 1:4){
+  for(q in 1:4){
+    for(p_seasonal in 1:4){
+      for(q_seasonal in 1:4){
+        if(p+d+q+p_seasonal+DD+q_seasonal<=11){
+          model<-arima(x=rent.ts, order = c((p-1),d,(q-1)), seasonal = list(order=c((p_seasonal-1),DD,(q_seasonal-1)), period=per))
+          pval<-Box.test(model$residuals, lag=log(length(model$residuals)))
+          sse<-sum(model$residuals^2)
+          cat(p-1,d,q-1,p_seasonal-1,DD,q_seasonal-1,per, 'AIC=', model$aic, ' SSE=',sse,' p-VALUE=', pval$p.value,'\n')
+        }
+      }
+    }
+  }
+}
+AP.sarima = arima(x=rent.ts, order = c(3, 1, 2), seasonal = list(order = c(3, 1, 2), period = per))
+
+AP.predict = forecast(AP.sarima, h=24, level = 80)
+
+autoplot(AP.predict)
+```
+SAN FRANCISCO:
+```{r}
+df = read.csv("sf_rent.csv")
+sf = ts(df$avg_rent)
+sf.diff = diff(sf)
+sf.dd = diff(diff(sf))
+plot.ts(sf, main = "Average rent price in San Francisco", ylab = "Price, USD", xlab="Month")
+plot.ts(diff(sf), main = "Differenced SF Rent Data")
+plot.ts(diff(diff(sf)), main = "Double Differenced SF Rent Data")
+acf(sf.diff, main = "ACF Differenced SF Rent")
+acf(sf.diff, type = 'partial', main = "PACF Differenced SF Rent")
+acf(sf.dd, main = "ACF Double Differenced SF Rent")
+acf(sf.dd, type = 'partial', main = "PACF Double Differenced SF Rent")
+```
+```{r}
+d = 1
+DD = 1
+per = 12
+for(p in 1:4){
+  for(q in 1:4){
+    for(p_seasonal in 2:4){
+      for(q_seasonal in 2:4){
+        if(p+d+q+p_seasonal+DD+q_seasonal<=11){
+          model<-arima(x=sf, order = c((p-1),d,(q-1)), seasonal = list(order=c((p_seasonal-1),DD,(q_seasonal-1)), period=per))
+          pval<-Box.test(model$residuals, lag=log(length(model$residuals)))
+          sse<-sum(model$residuals^2)
+          cat(p-1,d,q-1,p_seasonal-1,DD,q_seasonal-1,per, 'AIC=', model$aic, ' SSE=',sse,' p-VALUE=', pval$p.value,'\n')
+        }
+      }
+    }
+  }
+}
+```
+```{r}
+AP.sarima = arima(x=sf, order = c(1, 1, 3), seasonal = list(order = c(1, 1, 3), period = per))
+#AP.sarima = arima(x=sf, order = c(2, 2, 2), seasonal = list(order = c(2, 2, 2), period = per))
+
+AP.predict = forecast(AP.sarima, h=24, level = 50)
+
+autoplot(AP.predict)
+```
+SAN FRANCISCO:
+```{r}
+df = read.csv("la_rent.csv")
+la = ts(df$avg_rent)
+la.diff = diff(la)
+la.dd = diff(diff(la))
+plot.ts(la, main = "Average rent price in Los Angeles", ylab = "Price, USD", xlab="Month")
+plot.ts(diff(la), main = "Differenced LA Rent Data")
+plot.ts(diff(diff(la)), main = "Double Differenced LA Rent Data")
+acf(la.diff, main = "ACF Differenced LA Rent")
+acf(la.diff, type = 'partial', main = "PACF Differenced LA Rent")
+acf(la.dd, main = "ACF Double Differenced LA Rent")
+acf(la.dd, type = 'partial', main = "PACF Double Differenced LA Rent")
+```
+```{r}
+d = 1
+DD = 1
+per = 12
+for(p in 1:4){
+  for(q in 1:4){
+    for(p_seasonal in 2:4){
+      for(q_seasonal in 2:4){
+        if(p+d+q+p_seasonal+DD+q_seasonal<=11){
+          model<-arima(x=la, order = c((p-1),d,(q-1)), seasonal = list(order=c((p_seasonal-1),DD,(q_seasonal-1)), period=per))
+          pval<-Box.test(model$residuals, lag=log(length(model$residuals)))
+          sse<-sum(model$residuals^2)
+          cat(p-1,d,q-1,p_seasonal-1,DD,q_seasonal-1,per, 'AIC=', model$aic, ' SSE=',sse,' p-VALUE=', pval$p.value,'\n')
+        }
+      }
+    }
+  }
+}
+```
+```{r}
+AP.sarima = arima(x=la, order = c(2, 1, 3), seasonal = list(order = c(2, 1, 3), period = per))
+#AP.sarima = arima(x=sf, order = c(2, 2, 2), seasonal = list(order = c(2, 2, 2), period = per))
+
+AP.predict = forecast(AP.sarima, h=24, level = 50)
+
+autoplot(AP.predict)
+```
+
+
+
+
