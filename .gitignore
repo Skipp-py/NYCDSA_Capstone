@@ -9,8 +9,14 @@ __pycache__/
 # Datafiles
 *.csv
 <<<<<<< HEAD
+<<<<<<< HEAD
 *.xlsx
 /data
+=======
+*/data
+*.xlsx
+*.json
+>>>>>>> ed0ed6a2af83cc41f84f7e4b9d708ac2e27c2339
 =======
 */data
 *.xlsx
